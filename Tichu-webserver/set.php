@@ -2,10 +2,10 @@
 if( !isset( $_REQUEST["function"] ) ){
 	exit("f");
 }
-else if( !isset( $_REQUEST["tableId"] ) ){
+else if( !isset( $_REQUEST["tableId"] ) && $_REQUEST['function'] != 'register' ){
 	exit("t");
 }
-else if( !isset( $_REQUEST["myId"] ) ){
+else if( !isset( $_REQUEST["myId"] ) && $_REQUEST['function'] != 'register' ){
 	exit("id");
 }
 else{

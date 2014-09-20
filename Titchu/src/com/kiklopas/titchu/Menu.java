@@ -24,13 +24,15 @@ public class Menu implements ApplicationListener {
 	private float h;
 	private AssetManager manager;
 	private float debugX=100.0f,debugY=50.0f;
-	TextListener username,password;
+	TextListener username,password,email;
 	private Button connect;
 	private Vector<Button> playButtons;
 	private Vector<Button> loginButtons;
 	Preferences prefs;
 	public boolean startRandom = false;
 	private Button register;
+	private String msg;
+	private boolean showMsg;
 	
 	Menu(AssetManager manager){
 		this.manager = manager;		
@@ -47,6 +49,7 @@ public class Menu implements ApplicationListener {
 		// TEXT INPUT
 		username = new TextListener();
 		password = new TextListener();
+		email = new TextListener();
 		
 		Texture texture = new Texture(Gdx.files.internal("data/font/lucida.png"), true); // true enables mipmaps
 		texture.setFilter(TextureFilter.MipMapLinearNearest, TextureFilter.Linear); // linear filtering in nearest mipmap image
@@ -76,9 +79,10 @@ public class Menu implements ApplicationListener {
 		//////////////////////
 		temp = new Button("login.png",manager){
 			public void onclick(){
+				msg = "";
 				System.out.print("Login\n");
 					Gdx.input.getTextInput(password, "Login - password", "Enter password");
-					Gdx.input.getTextInput(username, "Login - username", "Enter username");
+					Gdx.input.getTextInput(username, "Login - username", "Enter username/email");
 					hideButtonArray(buttons);
 					connect.setVisible(true);
 			}
@@ -92,8 +96,10 @@ public class Menu implements ApplicationListener {
 		///
 		temp = new Button("register.png",manager){
 			public void onclick(){
-				Gdx.input.getTextInput(password, "Login - password", "Enter password");
-				Gdx.input.getTextInput(username, "Login - username", "Enter username");
+				msg = "";
+				Gdx.input.getTextInput(password, "Register - password", "Enter password");
+				Gdx.input.getTextInput(username, "Register - username", "Enter username");
+				Gdx.input.getTextInput(email, "Register - email", "Enter your email");
 				hideButtonArray(buttons);
 				register.setVisible(true);
 			}
@@ -150,13 +156,13 @@ public class Menu implements ApplicationListener {
 		register = new Button("register.png",manager){
 
 			public void onclick(){
-				System.out.println("Register\n"+username.text+"\n");
-				String res = GamePlayer.excutePost(GamePlayer.WEBSERVER+"set.php", "username="+username.text+"&password="+password.text+"&function=register");
+				System.out.println("Register\n"+username.text+"\n Wait Loading!");
+				String res = GamePlayer.excutePost(GamePlayer.WEBSERVER+"set.php", "email="+email.text+"&username="+username.text+"&password="+password.text+"&function=register");
 				if( res == null ){
 					System.out.println("NO RESULT");
 				}
 				else if( res.contains("00") ){
-					System.out.println("Registered Logged IN!!!");
+					System.out.println("Registered & Logged IN!!!");
 					prefs.putString("username", username.text);
 					prefs.putString("password", password.text);
 					prefs.putString("id", res.substring(2));
@@ -165,10 +171,32 @@ public class Menu implements ApplicationListener {
 					hideButtonArray(buttons);
 					showButtonArray(playButtons);
 				}
-				else{
-					System.out.println("Account doesnt Exists!" + res);
+				else if( res.contains("10") ){
+					System.out.println("Username Exists!" + res);
+					showMsg = true;
+					msg = "Username exists. Try again!";
 					showButtonArray(loginButtons);
-					connect.setVisible(false);
+					register.setVisible(false);
+				}
+				else if( res.contains("01") ){
+					System.out.println("Email Exists!" + res);
+					showMsg = true;
+					msg = "Email exists. Try again!";
+					showButtonArray(loginButtons);
+					register.setVisible(false);
+
+				}
+				else if( res.contains("11") ){
+					System.out.println("Both Username and Email exists!" + res);
+					showMsg = true;
+					msg = "Username and Email \n            exists.\n         Try again!";
+					showButtonArray(loginButtons);
+					register.setVisible(false);
+				}
+				else{
+					System.out.println("Error!" + res);
+					showButtonArray(loginButtons);
+					register.setVisible(false);
 				}
 			}
 		};
@@ -270,9 +298,14 @@ public class Menu implements ApplicationListener {
 		stage.act(Gdx.graphics.getDeltaTime());
         stage.draw();
         
-		if( prefs.getBoolean("logged") ){
+        if( prefs.getBoolean("logged") ){
 			stage.getSpriteBatch().begin();
 				font.draw(stage.getSpriteBatch(), "Logged in as "+prefs.getString("username") , w/5, h/2+170);
+			stage.getSpriteBatch().end();
+		}
+        if( showMsg ){
+			stage.getSpriteBatch().begin();
+				font.drawMultiLine(stage.getSpriteBatch(), "" + msg , w/5, h/2+190);
 			stage.getSpriteBatch().end();
 		}
 	}

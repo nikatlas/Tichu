@@ -2,11 +2,23 @@
 include_once("lib.php");
 
 function register(){
-	if( !isset($_REQUEST['username']) || !isset($_REQUEST['password']) )exit("e&NOT SET");
+	if( !isset($_REQUEST['username']) || !isset($_REQUEST['password']) || !isset($_REQUEST['email']) )exit("e&NOT SET");
 	connect();
 	$user = new User();
 	$user->set("username" , $_REQUEST['username']);
-	$user->set("password" , $_REQUEST['password']);
+	$user->set("password" , md5($_REQUEST['password']));
+	$user->set("email" , $_REQUEST['email']);
+	$user->set("createdDate" , date("Y-m-d H:i:s") );
+	
+	$q = mysql_query("SELECT * FROM users WHERE username='".$_REQUEST['username']."' OR email='".$_REQUEST['username']."'");
+	$r = mysql_fetch_array($q);
+	if( $r != false )$p1 = "1";
+	else $p1 = "0";	
+	$q = mysql_query("SELECT * FROM users WHERE username='".$_REQUEST['email']."' OR email='".$_REQUEST['email']."'");
+	$r = mysql_fetch_array($q);
+	if( $r != false )$p2 = "1";
+	else $p2 = "0";
+	if( $p1 == "1" || $p2 == "1" ) exit($p1.$p2);
 	
 	$user->add();
 	
@@ -18,11 +30,12 @@ function register(){
 function login(){
 	if( !isset($_REQUEST['username']) || !isset($_REQUEST['password']) )exit("e&NOT SET");
 	connect();
-	$q = mysql_query("SELECT * FROM users WHERE username='".$_REQUEST['username']."'");
+	$q = mysql_query("SELECT * FROM users WHERE username='".$_REQUEST['username']."' OR email='".$_REQUEST['username']."'");
 	$r = mysql_fetch_array($q);
-	if( $r['password'] == $_REQUEST['password'] ){
+	if( $r['password'] == md5($_REQUEST['password']) ){
 		$_SESSION['id'] = $r['id'];
 		$_SESSION['username'] = $r['username'];
+		$_SESSION['email'] = $r['email'];
 		 echo "00";echo $r['id'];
 	}
 	else{
