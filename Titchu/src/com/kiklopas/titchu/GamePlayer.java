@@ -16,8 +16,9 @@ import com.badlogic.gdx.Preferences;
 
 public class GamePlayer implements Runnable {
 	public static final String WEBSERVER = "http://tichu.schooliki.gr/";
-	public static final float FAST_INTERVAL = 0.1f;
-	public static final float SLOW_INTERVAL = 0.2f;
+	public static final float FAST_INTERVAL = 0.3f;
+	public static final float SLOW_INTERVAL = 0.8f;
+	private static final float ALIVE_INTERVAL = 7f;
 	private float INTERVAL = 0.5f;
 	Deck deck;
 	NPC npc;
@@ -25,7 +26,7 @@ public class GamePlayer implements Runnable {
 	String state = "";
 	int cstate = -1;
 	int numOfCards[] = { 0 , 0 , 0,  0};
-	
+	long stateTime;
 	int tableId = -1; // Must Be -1
 	int myId = -1;
 	int turn = -1;
@@ -72,6 +73,8 @@ public class GamePlayer implements Runnable {
 	private Preferences prefs;
 	public int pointsTo;
 	int playing = 1;
+	private long lastTime;
+	private float aliveTime;
 	
 	GamePlayer(Tichu app, Deck d){
 		parent = app;
@@ -241,7 +244,14 @@ public class GamePlayer implements Runnable {
 	}
 	public boolean sendDragon(final int offset){
 		if( Math.abs(offset-2) != 1 )return false;//offset = 1 or offset = 3
-		//npc.removeTradeSetFromCards();
+		
+		String res = excutePost(WEBSERVER+"set.php","function=sendDragon&myId="+String.valueOf(myId)+"&tableId="+String.valueOf(tableId)+"&to="+String.valueOf(offset));
+		if( res.contains("0") ){
+			dragon = 0;
+			return true;
+		}
+		return false;
+		/*
 		Lcon.clear();
 		Lcon.sync = true;
 		Lcon.setURL(WEBSERVER + "set.php");
@@ -281,6 +291,7 @@ public class GamePlayer implements Runnable {
 			delay();
 		}while(!flag);
 		return true;
+		*/
 	}
 	private void getTradeSet() {
 		if( con.status == "null" ){
@@ -373,10 +384,11 @@ public class GamePlayer implements Runnable {
 			con.setParam("myId", String.valueOf(myId));
 			con.setParam("function", "getState");
 			con.setParam("sendState", String.valueOf(sendState));
-
+			//final long time1 = System.nanoTime(); // TOBE COMMENTED 
 			con.onFinish = new Runnable(){
 				@Override
 				public void run() {
+					//System.out.println("DeltaTime = "+ ((long)System.nanoTime() - time1)/1000000 );// TOBE COMMENTED
 			//con.printLines();
 			if( con.getFirstLine() == "CC" ){
 				con.printLines();
@@ -409,6 +421,9 @@ public class GamePlayer implements Runnable {
 						con.clear();
 					}
 					else{
+						stateTime = System.nanoTime();
+						time = 2*INTERVAL;
+						System.out.println("StateChanged!");
 						cstate = intState;
 						
 						stateFlag = true;
@@ -454,39 +469,52 @@ public class GamePlayer implements Runnable {
 	}
 
 	private void getCurrent() {
-		if( con.status == "null" ){	
+		/*if( con.status == "null" ){	
 			con.setURL(WEBSERVER + "get.php");
 			con.setParam("tableId", String.valueOf(tableId));
 			con.setParam("myId", String.valueOf(myId));
 			con.setParam("function", "getCurrent");
 			con.request();
-		}
-		else if(con.status == "success" ){
 			
+		}*/
+		Lcon.clear();
+		Lcon.setURL(WEBSERVER + "get.php");
+		Lcon.setParam("tableId", String.valueOf(tableId));
+		Lcon.setParam("myId", String.valueOf(myId));
+		Lcon.setParam("function", "getCurrent");
+		
+		//final long time1 = System.nanoTime(); // TOBE COMMENTED 
+		Lcon.onFinish = new Runnable(){
+
+			@Override
+			public void run() {
+				System.out.println("DELTATIME ( GET CURRENT ) = " + ((long)System.nanoTime() - stateTime)/1000000 );
+				// TODO Auto-generated method stub
+
 				// Get Num of Card Per person Sorted By id
 				for(int i=1;i<=4;i++){
-					numOfCards[i-1] = Integer.parseInt( con.lines.get(i) );
+					numOfCards[i-1] = Integer.parseInt( Lcon.lines.get(i) );
 				}
 				// Get Sundiasmo Fulla On the floor
 				currentHand = new Hand();
-				currentHand.combination = Integer.parseInt( con.lines.get(5) );
-				currentHand.by = Integer.parseInt( con.lines.get(6) );
+				currentHand.combination = Integer.parseInt( Lcon.lines.get(5) );
+				currentHand.by = Integer.parseInt( Lcon.lines.get(6) );
 				if( currentHand.combination != 0 ){
-					setCurrentHand( con.lines.get(7) );
+					setCurrentHand( Lcon.lines.get(7) );
 				}
 				else{
 					setCurrentHand( null );
 				}
-				askedCard = Integer.parseInt(con.lines.get(8));
-				turn = Integer.parseInt(con.lines.get(9));
-				dragon = Integer.parseInt(con.lines.get(10));
-				bomb = Integer.parseInt(con.lines.get(11));
-				pointsTo = Integer.parseInt(con.lines.get(12));
-				playing = Integer.parseInt(con.lines.get(13));
-				syncCards( con.lines.get(14) );
-				teamPoints = Integer.parseInt(con.lines.get(15));
-				teamPoints2 = Integer.parseInt(con.lines.get(16));
-				String tichusString[] = con.lines.get(17).split(",");
+				askedCard = Integer.parseInt(Lcon.lines.get(8));
+				turn = Integer.parseInt(Lcon.lines.get(9));
+				dragon = Integer.parseInt(Lcon.lines.get(10));
+				bomb = Integer.parseInt(Lcon.lines.get(11));
+				pointsTo = Integer.parseInt(Lcon.lines.get(12));
+				playing = Integer.parseInt(Lcon.lines.get(13));
+				syncCards( Lcon.lines.get(14) );
+				teamPoints = Integer.parseInt(Lcon.lines.get(15));
+				teamPoints2 = Integer.parseInt(Lcon.lines.get(16));
+				String tichusString[] = Lcon.lines.get(17).split(",");
 				for(int i=0;i<4 && i<tichusString.length;i++){
 					try{
 						tichus[i] = Integer.parseInt(tichusString[i]);
@@ -505,9 +533,13 @@ public class GamePlayer implements Runnable {
 				
 				// Get my cards
 				// NOT DONE YET -- MIGHT NOT IN need!
-				con.clear();
+				Lcon.clear();
 				stateFlag = false;
-		}		
+			}};
+		Lcon.request();
+		
+		//else if(con.status == "success" ){
+		//}		
 	}
 	// Helps for get Current
 	private void syncCards(String string) {
@@ -621,9 +653,13 @@ public class GamePlayer implements Runnable {
 		Lcon.setParam("combination", String.valueOf(h.combination));
 		Lcon.setParam("cards", h.getStringCards());
 		Lcon.setParam("askedCard", String.valueOf(askedCard));
+
+		//final long time1 = System.nanoTime(); // TOBE COMMENTED 
 		Lcon.onFinish = new Runnable(){
 			@Override
 			public void run() {
+				//System.out.println("DeltaTime = "+ ((long)System.nanoTime() - time1)/1000000 );// TOBE COMMENTED
+
 				if( Lcon.getFirstLine() != "" ){
 					try{
 					int t = Integer.parseInt(Lcon.getFirstLine());
@@ -665,7 +701,7 @@ public class GamePlayer implements Runnable {
 		
 	}
 	private void delay(){
-		delay(500);
+		delay(100);
 	}
 	private void delay(int ms){
 		try {
@@ -699,6 +735,7 @@ public class GamePlayer implements Runnable {
 		while( active ){
 			gameLoop();
 		}
+		//if( !active )System.out.print("Inactive"); // TOBE COMMENTED
 	}
 	public int playHand(Vector<CardActor> actors, boolean bombFlag) {
 		npc.getHand(actors);
@@ -820,18 +857,29 @@ public class GamePlayer implements Runnable {
 		/*
 		 * ToDo -> check for error on requests! -> cases -> closedTable -> Wrong Hand -> Sync cards 
 		 */
+		if( this.pause )System.out.print("Paused");
+		if( con.isBusy() )System.out.print("BUSY");
+		
 		if( this.pause ){return;}
 		if( con.isBusy() )return;
 		//if( con.status == "p" )return;
 		
 		time  += Gdx.graphics.getDeltaTime();
+		aliveTime += Gdx.graphics.getDeltaTime();
+		//System.out.println("T: " + time); // TOBE COMMENTED
 		if( time > INTERVAL ){
 			time -= INTERVAL;
 		}
 		else return;
+		
+		//System.out.println("D: " + (System.nanoTime() - lastTime)/1000000 ); // TOBE COMMENTED 
+		lastTime = System.nanoTime();
 		if( tableId != -1 && myId != -1 ){ 
-			this.stayAlive();
-			this.isPlaying();
+			if( aliveTime > ALIVE_INTERVAL ){
+				this.stayAlive();
+				aliveTime = 0;
+			}
+			//this.isPlaying();
 		}
 		if( con.status == "failed" ){
 			System.out.println("Failed! Line: " + con.getFirstLine() );
@@ -871,7 +919,7 @@ public class GamePlayer implements Runnable {
 			sendTradeSet();
 		}
 		else{
-			final GamePlayer temp = this;
+			/*
 			//System.out.println("STATECHANGE");
 			Gdx.app.postRunnable(new Runnable() {
 		         @Override
@@ -884,9 +932,10 @@ public class GamePlayer implements Runnable {
 		        	 parent.game.myId = temp.myId;
 		         }
 		      });
+		      */
 			stateChanged();
-			delay(1000);
-
+			//delay(1000);
+			
 		}
 		
 		//Get Player done -^ implement in getCurrent
@@ -898,6 +947,8 @@ public class GamePlayer implements Runnable {
 				sendHand(h);
 			}
 		}*/
+		System.out.println("D: " + (System.nanoTime() - lastTime)/1000000 );
+
 	}
 	private void isPlaying() {
 		String res = excutePost(WEBSERVER+"isplaying.php", "tableId="+tableId);
@@ -928,7 +979,7 @@ public class GamePlayer implements Runnable {
 	}
 	public void stayAlive() {
 		excutePost(WEBSERVER+"valid.php", "myId="+myId+"&tableId="+tableId);	
-		System.out.println("Alive!");
+		//System.out.println("Alive!");
 	}
 }
 

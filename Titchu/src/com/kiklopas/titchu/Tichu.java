@@ -34,7 +34,8 @@ public class Tichu implements ApplicationListener {
 	private Vector<CardActor> actors;
 	private Vector<CardActor> currentHand;
 	
-	private Vector<Button> buttons,mainButtons;
+	Vector<Button> buttons;
+	Vector<Button> mainButtons;
 	private boolean tradeFlag = true;
 
 	public GamePlayer game;
