@@ -97,6 +97,11 @@ function getMyId($t,$orid){
 		$table->set("players",$table->data("players")+1);
 		$table->set("seats",$table->data("seats")-1);
 		$table->update();
+
+		$user = new User();
+		$user->get($orid);
+		$user->set("tableId" , $table->data("id"));
+		$user->update();
 	}
 	else{
 		echo "e";
@@ -121,6 +126,7 @@ function getRandomTable(){
 	$table->set("tichus","0000");
 	$table->set("points","|||");
 	$table->update();	
+	
 	echo $table->data("id"); 
 }
 function getState($t,$id){
@@ -135,6 +141,11 @@ function getState($t,$id){
 				$msg = "Trying to reget&ID:".$_SESSION['myId'];
 				break;
 		}
+	}
+	if( $table->state > 2 && $table->isPlaying() == 0 ){
+		$table->state = -1; // SOMEONE HAS DISCONNECTED
+		$table->set("state", -1 );
+		$table->update();	
 	}
 	echo $table->state; 
 	echo "&".$table->data("tichus")."&";

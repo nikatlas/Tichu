@@ -7,12 +7,22 @@ if( !isset( $_REQUEST["function"] ) ){
 }
 else if( !isset( $_REQUEST["myId"] ) ){
 	exit("id");
-}*/
-else{
-	$f = $_REQUEST["function"];
-	$t = $_REQUEST["tableId"];
-	$id = $_REQUEST["myId"];
 }
+
+if( isset($_REQUEST['tableId']) && isset($_REQUEST['myId']) ){
+	if( $_REQUEST['myId'] < 4 && $_REQUEST['myId'] >= 0 ){
+		include_once ("valid.php");	
+	}
+}
+
+*/
+
+
+
+$f = $_REQUEST["function"];
+$t = $_REQUEST["tableId"];
+$id = $_REQUEST["myId"];
+
 include_once("functions.php");
 
 switch( $f ){
