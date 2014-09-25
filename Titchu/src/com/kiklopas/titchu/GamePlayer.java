@@ -18,7 +18,7 @@ public class GamePlayer implements Runnable {
 	public static final String WEBSERVER = "http://tichu.schooliki.gr/";
 	public static final float FAST_INTERVAL = 0.3f;
 	public static final float SLOW_INTERVAL = 0.8f;
-	private static final float ALIVE_INTERVAL = 7f;
+	private static final float ALIVE_INTERVAL = 4f;
 	private float INTERVAL = 0.5f;
 	Deck deck;
 	NPC npc;
@@ -30,22 +30,29 @@ public class GamePlayer implements Runnable {
 	int tableId = -1; // Must Be -1
 	int myId = -1;
 	int turn = -1;
+	// TODO Newer
+	//		Majongh asked for 7 , Overpassed 7 with 8 , bomb on 7777 wasnt asked! // CHECK canPlay method or something
+	//		Opponent Cards not showing right after getCurrent!! 
+	// 		After round finish check whats shown!
+	//		Show score after round finish when drawing 8/14 cards!
+	// 		Card take animation fix to center when there are multiple cards
+	//		CHECK Tradesets if Right
+	// 		CHECK TODOS
 	
-	// TODO !!! -- > -- > -- > Shuffle not Working on SERVER DONE 
+	//-- > -- > -- > Shuffle not Working on SERVER DONE 
 	// 			-- > -- > -- > Read Timeout Fix DONE
 	// 			-- > -- > -- > State 2 -> Check 
 	// HAVE DONE Phoenix / Majongh implementation 
 	// 			 Network Stability ( 2 Internet for async button calls )
-	// 			 Tradesets are Right
-	//			
-	// TODO 	->>> ->>> 	DONE --- Dragon stay on Table to give to another
+	// 
+	// 		 	->>> ->>> 	DONE --- Dragon stay on Table to give to another
 	// 			->>> -> > 	PROPABLY DONE --- Points are going wrong( Propably a "|||" initiation on SQL would fix that)
 	// 			->>> ->>>	DONE ---- Implement a Class MessageBox to show stuff
 	//			->>> ->>>   DONE ---- REALLY NEED TO CHANGE FONTS
 	// 			->>> ->>> 	DONE ---- NEED TO SWITCH number to nicknames ! Add instructions under the CurrentHand ( who played it etc. ) 
 	// 			->>> ->>> 	//Need some fixes with Bombs. Check whats better. Dont take turn etc.
-	//			->>> ->>> 	See whats going on OnRoundFinish -> fix panel add a messageBox / Smooth restart!
 	//			->>> ->>> 	UI RECONSTRUCTION! - > Publish!
+	
 	Internet con;
 	Internet Lcon;
 	public boolean tradeSetSend = false;
@@ -202,6 +209,7 @@ public class GamePlayer implements Runnable {
 			
 		//}
 		};
+		// Seems to work fine for the moment
 		con.request();// added this // TODO CHECK THE ALTERNATIVE WAY IMPLEMENTED ONLY HERE
 	}
 	
@@ -431,7 +439,7 @@ public class GamePlayer implements Runnable {
 					}
 				}
 				catch(Exception e){
-					System.out.print("EXCEPTION STATE\n ST:"+state+"\n PL:");
+					System.out.print("EXCEPTION STATE\n ST:"+state+"\n ");
 				}
 			}
 			//System.out.print("P");
@@ -488,9 +496,7 @@ public class GamePlayer implements Runnable {
 
 			@Override
 			public void run() {
-				System.out.println("DELTATIME ( GET CURRENT ) = " + ((long)System.nanoTime() - stateTime)/1000000 );
-				// TODO Auto-generated method stub
-
+				//System.out.println("DELTATIME ( GET CURRENT ) = " + ((long)System.nanoTime() - stateTime)/1000000 );
 				// Get Num of Card Per person Sorted By id
 				for(int i=1;i<=4;i++){
 					numOfCards[i-1] = Integer.parseInt( Lcon.lines.get(i) );
@@ -867,7 +873,7 @@ public class GamePlayer implements Runnable {
 		time  += Gdx.graphics.getDeltaTime();
 		aliveTime += Gdx.graphics.getDeltaTime();
 		//System.out.println("T: " + time); // TOBE COMMENTED
-		if( time > INTERVAL ){
+		if( time > INTERVAL ){ 
 			time -= INTERVAL;
 		}
 		else return;
@@ -909,6 +915,7 @@ public class GamePlayer implements Runnable {
 				stateFlag = false;
 				Gdx.app.exit();
 				// TODO Announce the fact and solve properly
+				// DONT Exit popup a msgBox and click to leave!
 			}
 			else{
 				getCurrent();
@@ -947,7 +954,7 @@ public class GamePlayer implements Runnable {
 				sendHand(h);
 			}
 		}*/
-		System.out.println("D: " + (System.nanoTime() - lastTime)/1000000 );
+		//System.out.println("D: " + (System.nanoTime() - lastTime)/1000000 );
 
 	}
 	private void isPlaying() {
@@ -977,6 +984,7 @@ public class GamePlayer implements Runnable {
 			System.out.println("GOT NAMES : " + names.length);
 		}
 	}
+	// OBSOLETE 
 	public void stayAlive() {
 		excutePost(WEBSERVER+"valid.php", "myId="+myId+"&tableId="+tableId);	
 		//System.out.println("Alive!");
